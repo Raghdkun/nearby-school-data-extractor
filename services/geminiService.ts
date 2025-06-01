@@ -53,17 +53,21 @@ export const fetchSchoolsNearAddress = async (address: string): Promise<School[]
   const model = 'gemini-2.5-flash-preview-04-17';
   
   const prompt = `
-    Given the address "${address}", please generate a list of around 10 to 15 fictional schools that could be located nearby.
-    For each school, provide the following details:
-    - name: The fictional name of the school (e.g., "Sunnyvale Elementary", "Northwood High Academy").
-    - address: A plausible fictional street address. It doesn't need to be hyper-local to the input address, just a general fictional address.
-    - type: The type of school (e.g., "Elementary School", "Middle School", "High School", "K-12 School", "Charter School").
-    - studentCount: A fictional number of students enrolled (e.g., between 100 and 3000).
+    Given the address "${address}", please generate a list of AT LEAST 40 fictional schools that could be located nearby.
+    It is very important to provide at least 40 school entries.
+    For each school, please attempt to provide the following details:
+    - name: The fictional name of the school (e.g., "Sunnyvale Elementary", "Northwood High Academy"). This is a required field.
+    - address: A plausible fictional street address. This is a required field.
+    - type: The type of school (e.g., "Elementary School", "Middle School", "High School", "K-12 School", "Charter School"). This is a required field.
+    - studentCount: A fictional number of students enrolled (e.g., between 50 and 3500). This is a required field.
     - phoneNumber: A fictional phone number for the school (e.g., "555-123-4567"). If not available, omit or set to null.
     - principalName: A fictional name for the school principal (e.g., "Dr. Jane Doe"). If not available, omit or set to null.
     - assistantName: A fictional name for the school assistant principal or key administrative staff (e.g., "Mr. John Smith"). If not available, omit or set to null.
     - managerEmail: A fictional email address for the school office or manager (e.g., "office@exampleschool.edu"). If not available, omit or set to null.
     - assistantEmail: A fictional email address for the assistant (e.g., "jsmith@exampleschool.edu"). If not available, omit or set to null.
+
+    Priority is to generate a list of at least 40 schools. If you cannot generate all optional details (phoneNumber, principalName, assistantName, managerEmail, assistantEmail) for every one of the 40+ schools, that is acceptable.
+    However, please ensure the core fields (name, address, type, studentCount) are provided for all generated school entries.
 
     Return the information as a JSON array of objects, where each object represents a school.
     Example format for a single school object:
@@ -79,7 +83,6 @@ export const fetchSchoolsNearAddress = async (address: string): Promise<School[]
       "assistantEmail": "d.lee@exampleschool.org"
     }
     Ensure the output is ONLY the JSON array, without any other text, comments, or explanations. The JSON must be strictly valid.
-    If a particular optional field (like phoneNumber, principalName, etc.) is not applicable or cannot be generated for a school, you can omit the field or set its value to null in the JSON for that school.
   `;
 
   try {
@@ -88,7 +91,7 @@ export const fetchSchoolsNearAddress = async (address: string): Promise<School[]
       contents: prompt,
       config: {
         responseMimeType: "application/json", // Request JSON output
-        temperature: 0.8, // Slightly more creative for more varied fictional data
+        temperature: 0.9, // Slightly more creative for more varied fictional data and larger quantity
       }
     });
     
@@ -105,26 +108,24 @@ export const fetchSchoolsNearAddress = async (address: string): Promise<School[]
     }
 
     const schools: School[] = parsedData.map((item: any, index: number) => {
-      if (typeof item.name !== 'string' || 
-          typeof item.address !== 'string' || 
-          typeof item.type !== 'string' || 
-          typeof item.studentCount !== 'number') {
-        console.warn(`School object at index ${index} has an invalid core structure:`, item);
-        // Allow processing even if some optional fields are missing, but core fields must exist
-        // throw new Error(`AI returned an invalid school data structure for item at index ${index}. Name: ${item.name}, Address: ${item.address}, Type: ${item.type}, Count: ${item.studentCount}`);
-      }
+      // Core fields are expected, optional fields can be missing.
+      const schoolName = item.name || `Unnamed School ${index + 1}`;
+      const schoolAddress = item.address || "Address not provided";
+      const schoolType = item.type || "Type not specified";
+      const studentCount = typeof item.studentCount === 'number' ? item.studentCount : 0;
+
       return {
-        name: item.name || `Unnamed School ${index + 1}`,
-        address: item.address || "Address not provided",
-        type: item.type || "Type not specified",
-        studentCount: typeof item.studentCount === 'number' ? item.studentCount : 0,
+        name: schoolName,
+        address: schoolAddress,
+        type: schoolType,
+        studentCount: studentCount,
         phoneNumber: item.phoneNumber || undefined,
         principalName: item.principalName || undefined,
         assistantName: item.assistantName || undefined,
         managerEmail: item.managerEmail || undefined,
         assistantEmail: item.assistantEmail || undefined,
       };
-    }).filter(school => school.name && school.address && school.type); // Ensure core fields are present after mapping
+    }).filter(school => school.name && school.name !== `Unnamed School ${parsedData.indexOf(school) + 1}` && school.address && school.address !== "Address not provided" && school.type && school.type !== "Type not specified"); // Basic filter for minimally valid entries.
 
     return schools;
 
