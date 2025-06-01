@@ -1,0 +1,5 @@
+{
+  "name": "Nearby School Data Extractor",
+  "description": "An AI-powered application to find fictional nearby schools based on an address and export their details as a CSV file using Gemini.",
+  "requestFramePermissions": []
+}
