@@ -1,9 +1,11 @@
 
-import { School } from '../types'; // Assuming School is the primary type we export
+import { School } from '../types';
+
+const CSV_NOT_AVAILABLE = "Not available";
 
 /**
- * Converts an array of objects to a CSV string.
- * @param data Array of objects (e.g., School[]).
+ * Converts an array of School objects to a CSV string with predefined headers.
+ * @param data Array of School objects.
  * @returns A string in CSV format.
  */
 function convertToCSV(data: School[]): string {
@@ -11,16 +13,37 @@ function convertToCSV(data: School[]): string {
     return '';
   }
 
-  const headers = Object.keys(data[0]) as (keyof School)[];
+  // Define fixed headers in the desired order
+  const headers: { key: keyof School; label: string }[] = [
+    { key: 'name', label: 'Name' },
+    { key: 'address', label: 'Address' },
+    { key: 'type', label: 'Type' },
+    { key: 'studentCount', label: 'Student Count' },
+    { key: 'phoneNumber', label: 'Phone Number' },
+    { key: 'principalName', label: 'Principal Name' },
+    { key: 'assistantName', label: 'Assistant Name' },
+    { key: 'managerEmail', label: 'Manager Email' },
+    { key: 'assistantEmail', label: 'Assistant Email' },
+  ];
+
   const csvRows: string[] = [];
 
   // Add header row
-  csvRows.push(headers.join(','));
+  csvRows.push(headers.map(h => h.label).join(','));
 
   // Add data rows
   for (const row of data) {
     const values = headers.map(header => {
-      const escaped = ('' + row[header]).replace(/"/g, '""'); // Escape double quotes
+      let value = row[header.key];
+      
+      // Handle undefined/null values for optional fields
+      if (value === undefined || value === null) {
+        value = CSV_NOT_AVAILABLE;
+      } else if (typeof value === 'number') {
+        value = value.toString(); // Ensure numbers are strings for CSV
+      }
+      
+      const escaped = ('' + value).replace(/"/g, '""'); // Escape double quotes
       return `"${escaped}"`; // Enclose in double quotes
     });
     csvRows.push(values.join(','));
@@ -32,7 +55,7 @@ function convertToCSV(data: School[]): string {
 /**
  * Triggers a CSV file download in the browser.
  * @param filename The desired filename for the downloaded CSV.
- * @param rows An array of objects to be converted to CSV.
+ * @param rows An array of School objects to be converted to CSV.
  */
 export function exportToCsv(filename: string, rows: School[]): void {
   if (!rows || rows.length === 0) {
@@ -69,4 +92,3 @@ export function exportToCsv(filename: string, rows: School[]): void {
     console.log("CSV Data:\n", csvString);
   }
 }
-    

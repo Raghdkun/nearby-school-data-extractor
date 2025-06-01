@@ -4,9 +4,11 @@ export interface School {
   address: string;
   type: string; // e.g., "Elementary School", "High School"
   studentCount: number;
-  // Optional: add more fields if Gemini can provide them reliably
-  // principal?: string;
-  // yearEstablished?: number;
+  phoneNumber?: string;
+  principalName?: string;
+  assistantName?: string; // e.g., Assistant Principal
+  managerEmail?: string; // e.g., School administrator/office manager email
+  assistantEmail?: string; // e.g., Assistant's email
 }
 
 // Used to represent the structure of grounding chunks if using Google Search grounding
@@ -24,4 +26,3 @@ export interface GroundingMetadata {
   groundingChunks?: GroundingChunk[];
   // other grounding metadata fields
 }
-    
